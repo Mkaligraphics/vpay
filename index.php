@@ -19,25 +19,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['email']) && !empty($_POST['password'])) {
 
         $email = trim($_POST['email']);
-        $password = trim($_POST['password']);
+        $password = $_POST['password'];
 
         // Encrypt password using your AES method
         $encryptedPassword = $security->aes('encrypt', $password);
 
         // Prepare statement
         $stmt = $data->con->prepare("
-            SELECT id FROM users  WHERE email = ? AND password = ? LIMIT 1
+            SELECT id, password FROM users WHERE email = ? LIMIT 1
         ");
 
         if ($stmt) {
 
-            $stmt->bind_param("ss", $email, $encryptedPassword);
+            $stmt->bind_param("s", $email);
             $stmt->execute();
             $result = $stmt->get_result();
 
-            if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+            if ($user && (password_verify($password, $user['password']) || hash_equals($user['password'], $encryptedPassword))) {
 
-                $user = $result->fetch_assoc();
+                session_regenerate_id(true);
 
                 // Store session
                 $_SESSION['id'] = $user['id'];
@@ -88,130 +89,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VPay Real Estate | Login</title>
-
-<!-- TailwindCSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-  <link rel="icon" href="src/img/icon.png" type="image/x-icon"/>
-<script>
-tailwind.config = {
-    theme: {
-        extend: {
-            colors: {
-                primary: '#1e3a8a'
-            }
-        }
-    }
-}
-</script>
-
-<!-- jQuery CDN -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-<!-- FontAwesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+<meta name="theme-color" content="#142c30">
+<title>Welcome back · VPay</title>
+<link rel="icon" href="src/img/icon.png">
+<link rel="stylesheet" href="src/vendor/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="src/output.css?v=<?= filemtime(__DIR__ . '/src/output.css') ?>">
 </head>
-
-<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-100">
-
-<!-- Decorative Background -->
-<div class="absolute inset-0 -z-10 overflow-hidden">
-    <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-300 rounded-full blur-3xl opacity-20"></div>
-    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-300 rounded-full blur-3xl opacity-20"></div>
-</div>
-
-<div class="w-full max-w-md px-6">
-
-  <!-- Branding -->
-<div class="text-center mb-10">
-    
-    <div class="flex justify-center mb-4">
-        <img src="src/img/logo.png" alt="VPay Real Estate Logo" class="w-20 h-20 object-contain">
+<body class="login-body">
+<div class="login-layout">
+  <section class="login-story" aria-label="VPay property management">
+    <a href="index.php" class="brand"><span class="brand-symbol">v<span>↗</span></span><span>vpay<span class="brand-dot">.</span><small>PROPERTY MANAGER</small></span></a>
+    <div class="login-story-content"><span class="story-pill"><span></span>BUILT FOR BETTER PROPERTY MANAGEMENT</span><h1>Great spaces.<br>Even greater <em>possibilities.</em></h1><p>Bring your properties, people and payments together.<br>A little more clarity. A lot more room to grow.</p></div>
+    <div class="architecture-wrap"><img src="src/img/architecture.svg" alt="Architectural illustration of a residential community in warm emerald and ivory" width="720" height="600"><div class="illustration-caption"><span class="caption-line"></span>GOOD PLACES. THOUGHTFULLY MANAGED.</div></div>
+    <div class="login-story-footer"><span>One workspace. Every property.</span><span>Designed around you <span aria-hidden="true">↗</span></span></div>
+  </section>
+  <main class="login-main">
+    <div class="login-mobile-brand"><span class="brand-symbol">v<span>↗</span></span><span>vpay.</span></div>
+    <div class="login-topline"><span class="login-secure"><i class="fas fa-lock" aria-hidden="true"></i>Your private workspace</span><span class="login-edition">PROPERTY MANAGEMENT</span></div>
+    <div class="login-form-wrap"><div class="login-welcome-icon"><i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i></div><p class="eyebrow">A GOOD DAY TO MOVE FORWARD</p><h2>Welcome back<span>.</span></h2><p class="login-description">Sign in to your workspace and make yourself at home.</p>
+      <?php if (!empty($error)): ?><div class="login-error" role="alert"><i class="fas fa-circle-exclamation" aria-hidden="true"></i><?= h($error) ?></div><?php endif; ?>
+      <form method="POST" class="login-form">
+        <input type="hidden" name="csrf_token" value="<?= h($_SESSION['csrf_token']) ?>">
+        <div><label for="email">Email address</label><div class="login-input-wrap"><i class="far fa-envelope" aria-hidden="true"></i><input type="email" id="email" name="email" value="<?= h($_POST['email'] ?? '') ?>" autocomplete="username" placeholder="you@company.com" required></div></div>
+        <div><label for="password">Password</label><div class="login-input-wrap"><i class="fas fa-lock" aria-hidden="true"></i><input type="password" name="password" id="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" id="togglePassword" aria-label="Show password" aria-pressed="false"><i class="far fa-eye" aria-hidden="true"></i></button></div></div>
+        <div class="login-session-note"><i class="fas fa-shield-halved" aria-hidden="true"></i>Secure access to your property workspace</div>
+        <button type="submit" class="login-submit">Sign in to workspace <span aria-hidden="true">↗</span></button>
+      </form>
+      <div class="login-help"><span>Need a hand signing in?</span><p>Contact your workspace administrator for access or a password reset.</p></div>
+      <div class="login-value-line"><span></span><i class="fas fa-leaf" aria-hidden="true"></i>Less admin. More possibility.<span></span></div>
     </div>
-
-    <h1 class="text-3xl font-bold text-gray-800">VPay Real Estate</h1>
-    <p class="text-gray-500 text-sm mt-2">Property Management System</p>
-
+    <footer class="login-footer"><span>© <?= date('Y') ?> VPay. All rights reserved.</span><span>Made for the way you manage.</span></footer>
+  </main>
 </div>
-
-    <!-- Login Card -->
-    <div class="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
-
-        <?php if (!empty($error)): ?>
-            <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
-                <?= htmlspecialchars($error) ?>
-            </div>
-        <?php endif; ?>
-
-        <form method="POST" class="space-y-6">
-
-            <!-- Email -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                </label>
-                <input type="email" name="email" required
-                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-blue-100 outline-none transition"
-                    placeholder="admin@vpay.com">
-            </div>
-
-            <!-- Password -->
-            <div class="relative">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Password
-                </label>
-                <input type="password" name="password" id="password" required
-                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-primary focus:ring-4 focus:ring-blue-100 outline-none transition"
-                    placeholder="••••••••">
-                <span id="togglePassword"
-                    class="absolute right-4 top-11 cursor-pointer text-gray-400">
-                    <i class="fa-solid fa-eye"></i>
-                </span>
-            </div>
-
-            <!-- Submit Button -->
-      <button type="submit"
-    class="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-semibold py-3 rounded-xl transition">
-    Sign In
-</button>
-
-        </form>
-
-        <div class="mt-6 text-center text-sm text-gray-600">
-            Forgot your password?
-            <a href="#" class="text-primary font-medium hover:underline">
-                Reset here
-            </a>
-        </div>
-
-    </div>
-
-    <p class="text-center text-xs text-gray-400 mt-8">
-        © <?= date('Y') ?> VPay Real Estate. All rights reserved.
-    </p>
-
-</div>
-
-<!-- jQuery Script -->
 <script>
-$(document).ready(function(){
-
-    $('#togglePassword').click(function(){
-        let input = $('#password');
-        let icon = $(this).find('i');
-
-        if(input.attr('type') === 'password'){
-            input.attr('type','text');
-            icon.removeClass('fa-eye').addClass('fa-eye-slash');
-        } else {
-            input.attr('type','password');
-            icon.removeClass('fa-eye-slash').addClass('fa-eye');
-        }
-    });
-
+document.getElementById('togglePassword').addEventListener('click', function () {
+    const input = document.getElementById('password');
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    this.setAttribute('aria-pressed', String(show));
+    this.querySelector('i').className = show ? 'far fa-eye-slash' : 'far fa-eye';
 });
 </script>
-
 </body>
 </html>

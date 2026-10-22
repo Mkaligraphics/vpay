@@ -1,10 +1,8 @@
 <?php
 require '../config/database.php';
 $db = new dbase;
-$id = $_POST['id'];
-
-$db->con->query("UPDATE properties SET active = '0'  WHERE id='$id'");
-
-echo "deleted";
-
-?>
+$v0 = $_POST['id'] ?? '';
+$stmt = $db->con->prepare('UPDATE properties SET active=0 WHERE id=?');
+$stmt->bind_param('i', $v0);
+$stmt->execute();
+echo 'success';

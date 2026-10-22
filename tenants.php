@@ -5,14 +5,46 @@ require 'src/config/class.php';
 $db = new dbase;
 $data = new modules;
 
-$tenants = $db->con->query("SELECT * FROM tenants ORDER BY id DESC");
+/* Tenants with Apartment + Unit */
+$tenants = $db->con->query("
+SELECT
+    t.id,
+    t.name,
+    t.phone,
+    t.email,
+    t.lease_start,
+    t.active,
+
+    ti.property_id,
+    ti.unit_id,
+    ti.amount,
+
+    u.unit_number,
+    p.name AS property_name
+
+FROM tenants t
+
+LEFT JOIN tenant_info ti ON t.id = ti.tenant_id AND ti.active = 1
+LEFT JOIN property_units u ON ti.unit_id = u.id
+LEFT JOIN properties p ON ti.property_id = p.id
+
+WHERE t.active = 1
+ORDER BY t.id DESC
+");
+
+/* Apartments */
+$properties = $db->con->query("
+SELECT id, name
+FROM properties
+WHERE active = 1
+ORDER BY name ASC
+");
 ?>
 
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -20,24 +52,10 @@ $tenants = $db->con->query("SELECT * FROM tenants ORDER BY id DESC");
 
 <?php require 'src/inc/headerlinks.php'; ?>
 
-<script src="https://cdn.tailwindcss.com"></script>
-
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
-
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 
 </head>
 
-<body class="h-full bg-gray-100">
+<body class="app-body h-full bg-gray-100">
 
 <div class="flex h-screen overflow-hidden">
 
@@ -47,9 +65,8 @@ $tenants = $db->con->query("SELECT * FROM tenants ORDER BY id DESC");
 
 <?php require 'src/inc/header.php'; ?>
 
-<main class="flex-1 overflow-y-auto p-8">
+<main class="flex-1 overflow-y-auto p-8 space-y-8">
 
-<div class="max-w-7xl mx-auto">
 
 <div class="flex justify-between mb-6">
 
@@ -58,73 +75,28 @@ $tenants = $db->con->query("SELECT * FROM tenants ORDER BY id DESC");
 <p class="text-gray-500 text-sm">Manage property tenants</p>
 </div>
 
-<button onclick="openAddTenant()"
-class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-+ Add Tenant
-</button>
+
+<div class="flex gap-2">
+    <button onclick="openAddTenant()"
+    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+    + Add Tenant
+    </button>
+
+    <button onclick="openAssociateModal()"
+    class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+    + Associate Unit
+    </button>
+</div>
 
 </div>
 
 <div class="bg-white shadow rounded-xl p-6">
 
-<table id="tenantTable" class="display w-full">
+        <div class="overflow-x-auto"><?php include 'src/inc/tenants.php'; ?></div>
 
-<thead>
-
-<tr>
-<th>ID</th>
-<th>Unit</th>
-<th>Name</th>
-<th>Phone</th>
-<th>Email</th>
-<th>Lease Start</th>
-<th>Lease End</th>
-<th>Action</th>
-</tr>
-
-</thead>
-
-<tbody>
-
-<?php while($row = mysqli_fetch_assoc($tenants)){ ?>
-
-<tr id="row_<?php echo $row['id']; ?>">
-
-<td><?php echo $row['id']; ?></td>
-<td><?php echo $row['shop_id']; ?></td>
-<td><?php echo $row['name']; ?></td>
-<td><?php echo $row['phone']; ?></td>
-<td><?php echo $row['email']; ?></td>
-<td><?php echo $row['lease_start']; ?></td>
-<td><?php echo $row['lease_end']; ?></td>
-
-<td class="space-x-2">
-
-<button onclick="editTenant(<?php echo $row['id']; ?>)"
-
-class="bg-green-500 text-white px-3 py-1 rounded text-sm">
-Edit
-</button>
-
-<button onclick="deleteTenant(<?php echo $row['id']; ?>)"
-
-class="bg-red-500 text-white px-3 py-1 rounded text-sm">
-Delete
-</button>
-
-</td>
-
-</tr>
-
-<?php } ?>
-
-</tbody>
-
-</table>
 
 </div>
 
-</div>
 
 </main>
 
@@ -134,141 +106,16 @@ Delete
 
 
 <!-- ADD TENANT MODAL -->
+<?php require 'src/modals/addtenant.php'; ?>
+<?php require 'src/modals/associate_unit.php'; ?>
+
+<!-- BOTTOM LINK -->
+<?php require 'src/inc/bottomlinks.php'; ?>
+<!-- DATATABLE LINKS -->
+<?php require 'src/inc/datatablelinks.php'; ?>
+<!-- DASHBOARD JS -->
+<script src="src/scripts/tenants.js"></script>
 
-<div id="addTenantModal" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center">
-
-<div class="bg-white rounded-xl p-6 w-96">
-
-<h3 class="text-lg font-semibold mb-4">Add Tenant</h3>
-
-<form id="addTenantForm">
-
-<input type="text" name="shop_id" placeholder="Shop / Unit"
-class="w-full border p-2 mb-3 rounded">
-
-<input type="text" name="name" placeholder="Tenant Name"
-class="w-full border p-2 mb-3 rounded">
-
-<input type="text" name="phone" placeholder="Phone"
-class="w-full border p-2 mb-3 rounded">
-
-<input type="email" name="email" placeholder="Email"
-class="w-full border p-2 mb-3 rounded">
-
-<label class="text-sm">Lease Start</label>
-
-<input type="date" name="lease_start"
-class="w-full border p-2 mb-3 rounded">
-
-<label class="text-sm">Lease End</label>
-
-<input type="date" name="lease_end"
-class="w-full border p-2 mb-3 rounded">
-
-<div class="flex justify-end gap-3">
-
-<button type="button" onclick="closeModal()"
-class="px-4 py-2 bg-gray-300 rounded">
-Cancel
-</button>
-
-<button type="submit"
-class="px-4 py-2 bg-blue-600 text-white rounded">
-Save
-</button>
-
-</div>
-
-</form>
-
-</div>
-
-</div>
-
-
-
-<script>
-
-$(document).ready(function(){
-
-$('#tenantTable').DataTable({
-
-dom:'Bfrtip',
-
-buttons:[
-'copy','excel','csv','pdf','print'
-]
-
-});
-
-});
-
-
-function openAddTenant(){
-
-$('#addTenantModal').removeClass('hidden');
-
-}
-
-
-function closeModal(){
-
-$('#addTenantModal').addClass('hidden');
-
-}
-
-
-
-$('#addTenantForm').submit(function(e){
-
-e.preventDefault();
-
-$.ajax({
-
-url:'src/process/save_tenant.php',
-
-type:'POST',
-
-data:$(this).serialize(),
-
-success:function(){
-
-location.reload();
-
-}
-
-});
-
-});
-
-
-
-function deleteTenant(id){
-
-if(confirm("Delete tenant?")){
-
-$.ajax({
-
-url:'src/process/delete_tenant.php',
-
-type:'POST',
-
-data:{id:id},
-
-success:function(){
-
-$("#row_"+id).fadeOut();
-
-}
-
-});
-
-}
-
-}
-
-</script>
 
 </body>
-
 </html>

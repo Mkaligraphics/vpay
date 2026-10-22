@@ -1,35 +1,10 @@
-   <header class="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
-
-      <div>
-        <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
-        <p class="text-sm text-gray-500">Welcome back, 
-          <?php if ($data->loggedin()) { ?>          
-              <?php echo strtoupper($data->getfield('name')); ?>
-            <?php } else { ?>    
-              <script>location.href='logout.php';</script>
-            <?php } ?>
-        </p>
-      </div>
-
-      <div class="flex items-center space-x-6">
-
-        <input type="text" placeholder="Search..."
-          class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none">
-
-        <div class="relative">
-          <button onclick="toggleProfile()" class="flex items-center space-x-2">
-            <div class="w-10 h-10 bg-blue-700 text-white rounded-full flex items-center justify-center">
-              VP
-            </div>
-          </button>
-
-          <div id="profileMenu" class="hidden absolute right-0 mt-2 w-44 bg-white shadow-xl rounded-lg">
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Settings</a>
-            <a href="logout" class="block px-4 py-2 hover:bg-gray-100 text-red-500">Logout</a>
-          </div>
-        </div>
-
-      </div>
-
-    </header>
+<?php
+$pageNames = ['dashboard'=>'Overview','properties'=>'Properties','tenants'=>'Tenants','payments'=>'Record payment','newproperty'=>'Add property','property_units'=>'Create units','property_types'=>'Property types','units'=>'Units','invoices'=>'Invoices','create_invoices'=>'Create invoice','payment_report'=>'Payment report','occupancy_report'=>'Occupancy report','settings'=>'Settings','maintenance'=>'Maintenance'];
+$pageKey = basename($_SERVER['SCRIPT_NAME'], '.php');
+$pageTitle = $pageNames[$pageKey] ?? 'VPay';
+$userName = $data->getfield('name') ?: 'Account';
+?>
+<header class="app-header">
+  <div class="header-location"><button type="button" id="mobileMenuBtn" aria-label="Open navigation" aria-controls="appSidebar" aria-expanded="false" class="mobile-menu-button md:hidden"><i class="fas fa-bars" aria-hidden="true"></i></button><span class="header-workspace">Workspace</span><span class="header-slash">/</span><span class="header-current"><?= h($pageTitle) ?></span></div>
+  <div class="header-right"><span class="header-date"><i class="far fa-calendar" aria-hidden="true"></i><?= date('D, d M Y') ?></span><span class="header-divider"></span><div class="relative"><button type="button" id="profileButton" aria-label="Account menu for <?= h($userName) ?>" aria-expanded="false" class="profile-trigger"><span class="avatar"><?= h(strtoupper(substr($userName, 0, 2))) ?></span><span class="profile-name"><?= h($userName) ?><small>My account</small></span><i class="fas fa-chevron-down" aria-hidden="true"></i></button><div id="profileMenu" class="hidden profile-menu"><p>Signed in as <strong><?= h($userName) ?></strong></p><a href="settings.php"><i class="fas fa-sliders" aria-hidden="true"></i>Settings</a><a href="logout.php" class="signout"><i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i>Sign out</a></div></div></div>
+</header>

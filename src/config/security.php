@@ -6,7 +6,7 @@
 
 		public function aes($action, $string) {
 		    $output = false;
-		    $key = hash('sha256', $this->secret_key); 
+		    $key = hash('sha256', $this->secret_key);
 		    $iv = substr(hash('sha256', $this->secret_iv), 0, 16);
 		    if ( $action == 'encrypt' ) {
 		        $output = openssl_encrypt($string, $this->encrypt_method, $key, 0, $iv);

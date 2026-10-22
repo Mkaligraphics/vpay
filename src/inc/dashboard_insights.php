@@ -1,0 +1,22 @@
+<?php
+$chartStart = (new DateTimeImmutable('first day of this month'))->modify('-5 months');
+$chartEnd = (new DateTimeImmutable('first day of next month'))->format('Y-m-d');
+$chartFrom = $chartStart->format('Y-m-d');
+$stmt = $db->con->prepare("SELECT DATE_FORMAT(date, '%Y-%m') AS month, SUM(amount) AS total FROM payments WHERE date >= ? AND date < ? GROUP BY DATE_FORMAT(date, '%Y-%m')");
+$stmt->bind_param('ss', $chartFrom, $chartEnd); $stmt->execute();
+$monthlyCollections = [];
+foreach ($stmt->get_result() as $item) $monthlyCollections[$item['month']] = (float)$item['total'];
+$chartMax = max(1, ...array_values($monthlyCollections));
+$sixMonthTotal = array_sum($monthlyCollections);
+$recentPayments = $db->con->query('SELECT p.amount, p.date, p.method, t.name AS tenant_name FROM payments p LEFT JOIN tenants t ON t.id = p.tenant ORDER BY p.date DESC, p.id DESC LIMIT 4');
+?>
+<div class="insights-grid">
+  <section class="surface collection-panel"><div class="panel-heading"><div><p class="eyebrow">THE BIG PICTURE</p><h2>Collection performance</h2></div><span class="period-chip"><span></span>Last 6 months</span></div><div class="chart-summary"><strong><small>KES</small> <?= number_format($sixMonthTotal) ?></strong><span>Total received by payment date</span></div>
+    <div class="collection-chart" role="img" aria-label="Monthly collections over the last six months. Total KES <?= number_format($sixMonthTotal) ?>.">
+      <div class="chart-gridlines"><span><?= number_format($chartMax) ?></span><span><?= number_format($chartMax / 2) ?></span><span>0</span></div>
+      <div class="chart-columns"><?php for ($i=0; $i<6; $i++): $month = $chartStart->modify("+$i months"); $value = $monthlyCollections[$month->format('Y-m')] ?? 0; $height = $value > 0 ? max(2, round($value / $chartMax * 100, 2)) : 0; ?><div class="chart-column"><div class="bar-track"><div class="chart-bar <?= $i===5 ? 'chart-bar-current' : '' ?>" style="height:<?= $height ?>%" title="<?= h($month->format('F Y')) ?>: KES <?= number_format($value, 2) ?>"></div></div><span><?= h($month->format('M')) ?></span><span class="sr-only">KES <?= number_format($value) ?></span></div><?php endfor; ?></div>
+    </div><div class="chart-footnote"><i class="fas fa-circle-info" aria-hidden="true"></i><?= $sixMonthTotal > 0 ? 'Collections reflect recorded payments, including advance rent.' : 'Your first recorded payment will bring this chart to life.' ?></div>
+  </section>
+  <section class="occupancy-panel"><div class="panel-heading"><div><p class="eyebrow">EVERY SPACE COUNTS</p><h2>Portfolio occupancy</h2></div><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></div><div class="occupancy-ring" style="--occupancy:<?= $occupancy ?>%"><div><strong><?= $occupancy ?><small>%</small></strong><span>Occupied</span></div></div><div class="occupancy-legend"><div><span class="legend-dot"></span><span>Occupied units</span><strong><?= $occupiedUnits ?></strong></div><div><span class="legend-dot legend-dot-muted"></span><span>Available units</span><strong><?= $vacantUnits ?></strong></div></div><a href="occupancy_report.php" class="occupancy-link">View occupancy report <span aria-hidden="true">↗</span></a></section>
+</div>
+<section class="surface recent-panel"><div class="panel-heading"><div><p class="eyebrow">MONEY IN MOTION</p><h2>Recent payments</h2></div><a href="payment_report.php" class="text-link">View all payments <span aria-hidden="true">↗</span></a></div><?php if (!$recentPayments->num_rows): ?><div class="empty-state"><span class="empty-state-icon"><i class="fas fa-receipt" aria-hidden="true"></i></span><div><h3>A fresh start for your collections</h3><p>Record a payment against an invoice to see it here.</p></div><a href="payments.php" class="button-secondary">Record payment <span aria-hidden="true">↗</span></a></div><?php else: ?><div class="recent-payments-list"><?php foreach ($recentPayments as $payment): ?><div class="payment-item"><span class="payment-item-icon"><i class="fas fa-arrow-down" aria-hidden="true"></i></span><div><strong><?= h($payment['tenant_name'] ?: 'Tenant') ?></strong><span><?= h($payment['method']) ?> · <?= h(date('d M Y', strtotime($payment['date']))) ?></span></div><strong class="payment-item-amount">+ KES <?= number_format($payment['amount'], 2) ?></strong><span class="status-badge">Received</span></div><?php endforeach; ?></div><?php endif; ?></section>
