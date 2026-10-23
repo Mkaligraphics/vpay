@@ -1,5 +1,6 @@
 <?php
-require '../config/database.php';
+require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/../config/database.php';
 $db = new dbase;
 $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 if (!$id) { http_response_code(422); exit('Invalid tenant.'); }

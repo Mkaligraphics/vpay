@@ -1,5 +1,6 @@
 <?php
-require '../config/database.php';
+require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/../config/database.php';
 $db = new dbase;
 $tenant = filter_input(INPUT_POST, 'tenant_id', FILTER_VALIDATE_INT) ?: 0;
 $stmt = $db->con->prepare("SELECT i.*, p.id AS property_id, pu.id AS unit_id FROM invoices i LEFT JOIN properties p ON p.name = i.property LEFT JOIN property_units pu ON pu.property_id = p.id AND pu.unit_number = i.unit WHERE i.tenant_id = ? AND i.status = 'unpaid' AND i.active = 1 ORDER BY i.due_date, i.id");

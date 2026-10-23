@@ -1,8 +1,8 @@
 <?php
-session_start();
+require_once __DIR__ . '/src/config/bootstrap.php';
 
-require 'src/config/database.php';
-require 'src/config/security.php';
+require_once __DIR__ . '/src/config/database.php';
+require_once __DIR__ . '/src/config/security.php';
 
 $data = new dbase();
 $security = new security(); // Ensure class name matches your security.php

@@ -1,5 +1,6 @@
 <?php
-require '../config/database.php';
+require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/../config/database.php';
 header('Content-Type: application/json');
 $db = new dbase;
 $invoiceId = filter_input(INPUT_POST, 'invoice_id', FILTER_VALIDATE_INT);

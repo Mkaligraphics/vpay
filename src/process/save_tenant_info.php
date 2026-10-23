@@ -1,5 +1,6 @@
 <?php
-require '../config/database.php';
+require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/../config/database.php';
 $db = new dbase;
 $tenant = filter_input(INPUT_POST, 'tenant_id', FILTER_VALIDATE_INT);
 $property = filter_input(INPUT_POST, 'property_id', FILTER_VALIDATE_INT);

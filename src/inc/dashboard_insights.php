@@ -6,7 +6,7 @@ $stmt = $db->con->prepare("SELECT DATE_FORMAT(date, '%Y-%m') AS month, SUM(amoun
 $stmt->bind_param('ss', $chartFrom, $chartEnd); $stmt->execute();
 $monthlyCollections = [];
 foreach ($stmt->get_result() as $item) $monthlyCollections[$item['month']] = (float)$item['total'];
-$chartMax = max(1, ...array_values($monthlyCollections));
+$chartMax = max(array_merge([1], array_values($monthlyCollections)));
 $sixMonthTotal = array_sum($monthlyCollections);
 $recentPayments = $db->con->query('SELECT p.amount, p.date, p.method, t.name AS tenant_name FROM payments p LEFT JOIN tenants t ON t.id = p.tenant ORDER BY p.date DESC, p.id DESC LIMIT 4');
 ?>

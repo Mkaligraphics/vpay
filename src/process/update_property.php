@@ -1,5 +1,6 @@
 <?php
-require '../config/database.php';
+require_once __DIR__ . '/../config/bootstrap.php';
+require_once __DIR__ . '/../config/database.php';
 $db = new dbase;
 $v0 = $_POST['name'] ?? '';
 $v1 = $_POST['county'] ?? '';

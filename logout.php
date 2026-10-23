@@ -1,8 +1,6 @@
 <?php
 session_start();
-ob_start();
+$_SESSION = [];
 session_destroy();
-header('location: ../vpay');
-
-
-?>
+header('Location: index.php');
+exit;
